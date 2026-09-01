@@ -180,7 +180,11 @@
 	};
 
 	function tick(currentTime: number) {
-		const dt = Math.min((currentTime - lastTime) / 1000, 0.033);
+		// Clamp matches the engine's own catch-up ceiling (8 substeps of 1/60s
+		// in BlobPhysics.tick), so sustained low-fps rendering down to ~7.5fps
+		// keeps real-time motion speed instead of dilating simulated time. A
+		// tab-resume jump is still bounded by the same engine substep cap.
+		const dt = Math.min((currentTime - lastTime) / 1000, 8 / 60);
 		lastTime = currentTime;
 
 		if (physics) {
