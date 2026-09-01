@@ -60,6 +60,21 @@ const FIXED_TIMESTEP_SECONDS = 1 / 60;
 // after a paused/backgrounded tab resumes), so a long real-time gap can't
 // spiral into an unbounded number of substeps in one frame.
 const MAX_PHYSICS_SUBSTEPS = 8;
+// Per-substep steering gain for the ambient drift cruise. Each blob carries a
+// driftAngle/driftSpeed pair (initialized below, re-randomized on wall bounce
+// and by the slow re-heading roll in updateMovementWithAccelerometer); the
+// cruise steers velocity toward that heading every substep. Against the
+// *= 0.992 damping this settles near 0.86x of the scaled target, a sustained
+// gentle coherent travel in the -40..140 physics space — the
+// "idle blobs drift" baseline of docs/physics-feel-contract.md — instead of
+// the zero-mean jitter random walk that damping otherwise erases in ~1.4s.
+const DRIFT_CRUISE_STEERING = 0.05;
+// The cruise target speed is driftSpeed scaled by this factor. The raw
+// driftSpeed field (0.01-0.025/substep) sits below the speed the jitter
+// kicks already reach, so unscaled it disappears into the random walk;
+// scaled, the settled cruise (~1.5-3.9 units/s) reads as travel while staying
+// well under pointer/scroll/gravity speeds so inputs still dominate.
+const DRIFT_CRUISE_SPEED_SCALE = 3;
 
 export class BlobPhysics {
 	private blobs: ConvexBlob[] = [];
@@ -565,6 +580,14 @@ export class BlobPhysics {
 	}
 
 	private updateMovementWithAccelerometer(blob: ConvexBlob, time: number): void {
+		// Ambient cruise: the always-on baseline field. driftAngle/driftSpeed
+		// were initialized per-blob since the pre-Phase-A baseline but never
+		// read by the loop, so idle motion was only the bounded jitter below.
+		const driftAngle = blob.driftAngle || 0;
+		const cruiseSpeed = (blob.driftSpeed || 0) * DRIFT_CRUISE_SPEED_SCALE;
+		blob.velocityX += (Math.cos(driftAngle) * cruiseSpeed - blob.velocityX) * DRIFT_CRUISE_STEERING;
+		blob.velocityY += (Math.sin(driftAngle) * cruiseSpeed - blob.velocityY) * DRIFT_CRUISE_STEERING;
+
 		
 		const neutralDriftX = (Math.random() - 0.5) * 0.001;
 		const neutralDriftY = (Math.random() - 0.5) * 0.001;
