@@ -61,6 +61,13 @@ const FIXED_TIMESTEP_SECONDS = 1 / 60;
 // spiral into an unbounded number of substeps in one frame.
 const MAX_PHYSICS_SUBSTEPS = 8;
 
+// Per-substep velocity damping applied at the end of updateScreensaverPhysics.
+// Terminal speed under a constant per-substep force f is
+// f * VELOCITY_DAMPING / (1 - VELOCITY_DAMPING) ≈ 124 * f — the relation the
+// idle cruise in updateMovementWithAccelerometer() inverts so each blob's
+// driftSpeed is its terminal cruise speed.
+const VELOCITY_DAMPING = 0.992;
+
 export class BlobPhysics {
 	private blobs: ConvexBlob[] = [];
 	private config: BlobPhysicsConfig;
@@ -448,7 +455,7 @@ export class BlobPhysics {
 				wallBounceCount: 0,
 				lastBounceTime: 0,
 				driftAngle: Math.random() * Math.PI * 2,
-				driftSpeed: 0.01 + Math.random() * 0.015,
+				driftSpeed: 0.05 + Math.random() * 0.05,
 				territoryRadius: 100 + Math.random() * 60,
 				territoryX: clampedX,
 				territoryY: clampedY,
@@ -535,8 +542,8 @@ export class BlobPhysics {
 		this.handleWallBouncing(blob);
 
 		
-		blob.velocityX *= 0.992;
-		blob.velocityY *= 0.992;
+		blob.velocityX *= VELOCITY_DAMPING;
+		blob.velocityY *= VELOCITY_DAMPING;
 	}
 
 	private applyAccelerometerForces(blob: ConvexBlob): void {
@@ -580,7 +587,23 @@ export class BlobPhysics {
 		blob.velocityX += brownianX;
 		blob.velocityY += brownianY;
 
-		
+		// Idle cruise (0.3.7): driftAngle/driftSpeed have been initialized per
+		// blob since 0.3.0 but were never read by the physics loop, so with no
+		// pointer, scroll, or devicemotion input the only idle motion was
+		// zero-mean jitter and slow bounded slosh — the background read as
+		// frozen on every desktop. A constant per-substep force along the
+		// blob's persistent heading makes driftSpeed the terminal cruise speed
+		// under the unchanged damping: blobs drift, reach walls, and bounce
+		// (recordBounce() already re-randomizes driftAngle on impact), while
+		// every transient input — scroll, pointer, devicemotion — keeps
+		// exactly the same feel because the cruise force is purely additive
+		// and consumes no randomness.
+		const driftAngle = blob.driftAngle || 0;
+		const cruiseForce = (blob.driftSpeed ?? 0.075) * (1 - VELOCITY_DAMPING);
+		blob.velocityX += Math.cos(driftAngle) * cruiseForce;
+		blob.velocityY += Math.sin(driftAngle) * cruiseForce;
+
+
 		if (Math.random() < 0.002) {
 			blob.driftAngle = Math.random() * Math.PI * 2;
 		}

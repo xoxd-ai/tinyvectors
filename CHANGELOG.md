@@ -5,6 +5,13 @@
 > [tinyland-inc/bazel-registry](https://github.com/tinyland-inc/bazel-registry)
 > only. See the README's Install section for the sanctioned consumption paths.
 
+## 0.3.7 - 2026-09-01
+
+- Idle drift cruise: `driftAngle`/`driftSpeed` — initialized per blob since 0.3.0 but never read by the physics loop — are now wired into the screensaver physics step as a constant per-substep force along each blob's persistent heading, with `driftSpeed` its terminal speed under the unchanged `*= 0.992` damping. With no pointer, scroll, or devicemotion input (i.e. every idle desktop), the only idle motion was zero-mean jitter and a slow bounded slosh, so the background read as frozen; blobs now drift gently around the field by default, reach the walls, and bounce (`recordBounce()` already re-randomizes the heading on impact). No permission grant or sensor is required, and devicemotion/pointer/scroll input still layers on top with identical feel: the cruise force is purely additive and consumes no randomness, so transient impulses decay exactly as before.
+- `driftSpeed` init raised from `0.01 + rand * 0.015` (dead-code-era values, weaker than the ambient slosh) to `0.05 + rand * 0.05`: terminal cruise ≈ 3–6 units/s in the 180-unit physics field, i.e. a blob crosses the field in roughly 30–60 s.
+- `prefers-reduced-motion` behavior is unchanged: the cruise lives inside the physics step, which `TinyVectors` never runs while reduced motion is active (`respectReducedMotion` defaults `true` and renders the existing static frame).
+- The per-substep damping literal is extracted to a named `VELOCITY_DAMPING` constant (still `0.992`); no behavior change.
+
 ## 0.3.6 - 2026-07-25
 
 - Adds a `respectReducedMotion?: boolean` prop (default `true`) to `TinyVectors`: when `(prefers-reduced-motion: reduce)` matches, the component renders the existing static single frame (the same path `animated={false}` already uses) instead of running the rAF loop, and switches live if the media query changes. Pass `respectReducedMotion={false}` to animate regardless (TIN-3170).

@@ -1,6 +1,6 @@
 {
   "name": "@tummycrypt/tinyvectors",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Animated vector blob backgrounds with physics simulation for Svelte 5",
   "type": "module",
   "packageManager": "pnpm@9.15.9",
