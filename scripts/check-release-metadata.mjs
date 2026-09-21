@@ -76,7 +76,7 @@ const extractWorkflowValue = (source, key, label) => {
 const sharedPackageWorkflow = (source, label) =>
 	extract(
 		source,
-		/uses:\s*(tinyland-inc\/ci-templates\/\.github\/workflows\/js-bazel-package\.yml@[0-9a-f]{40})/,
+		/uses:\s*((?:tinyland-inc|xoxd-ai)\/ci-templates\/\.github\/workflows\/js-bazel-package\.yml@(?:[0-9a-f]{40}|v\d+\.\d+\.\d+))/,
 		label,
 	);
 
