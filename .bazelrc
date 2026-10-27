@@ -1,9 +1,16 @@
+# Bound the Bazel client server: it exits after 120 idle seconds
+# (TIN-5770 R470).
+startup --max_idle_secs=120
+
 common --enable_bzlmod
 
 build --jobs=auto
 build --worker_sandboxing
 build --disk_cache=~/.cache/bazel-tinyvectors
 build --show_timestamps
+# No flywheel lane is enrolled here, so a Bazel build or test is local,
+# non-qualifying, and never falls back silently from a remote (TIN-5770 R471).
+build --remote_local_fallback=false
 
 test --test_output=errors
 test --test_timeout=120,600,1800,3600

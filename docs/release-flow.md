@@ -35,7 +35,10 @@ pins; the pinned reusable workflow and its inputs, including
 
 ## Pre-Release Gates
 
-Run the CI checks plus the local consumer check for the Bazel-built package:
+Run the CI checks plus the local consumer check for the Bazel-built package.
+No flywheel lane is enrolled, so the two `bazel` lines are local,
+non-qualifying. `.bazelrc` ends their server after 120 idle seconds
+(TIN-5770 R470, R471).
 
 ```bash
 pnpm run check:release-metadata
@@ -68,7 +71,8 @@ consumer bundle. `dist/core/InteractionField.js` is expected to appear once
 runtime physics routes an input through the field contract, and the gzip
 result is the source of truth for whether that cost is acceptable.
 
-`bazel query //...` should also work locally. `.bazelignore` excludes direnv,
+`bazel --batch query //...` should also work locally. `--batch` runs the query
+without leaving a server (TIN-5770 R472). `.bazelignore` excludes direnv,
 Nix, package-manager, and build-output directories so Bazel does not walk
 generated local artifacts.
 

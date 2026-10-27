@@ -5,7 +5,8 @@ Hybrid build for a package containing both pure TypeScript (core/, motion/, them
 workers/) and Svelte components (svelte/).
 
   Standalone: pnpm build
-  Bazel:      bazel build //:pkg
+  Bazel:      CI builds the package through ci-templates js-bazel-package.yml.
+              A local `bazel build //:pkg` is local, non-qualifying.
 
 Build strategy:
   - js_run_binary wrapping `vite build` for the full package (handles .svelte

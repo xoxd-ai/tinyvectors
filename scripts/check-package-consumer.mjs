@@ -21,7 +21,7 @@ const tscPath = join(
 
 if (!existsSync(resolve(packageDir, 'package.json'))) {
 	console.error(`Package directory is missing package.json: ${packageDir}`);
-	console.error('Run: nix develop . --command bazel build //:pkg');
+	console.error('Run: nix develop . --command bazel build //:pkg (local, non-qualifying)');
 	process.exit(1);
 }
 
